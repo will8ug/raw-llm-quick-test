@@ -8,4 +8,6 @@ dependencies = [
     "dashscope>=1.25.12",
     "dotenv>=0.9.9",
     "google-genai>=1.60.0",
+    "openai>=2.48.0",
+    "python-dotenv>=1.2.1",
 ]
