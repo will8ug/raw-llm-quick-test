@@ -34,8 +34,8 @@ def _anthropic_client(base_url: str) -> Anthropic:
     return Anthropic(api_key=os.getenv(API_KEY_ENV_VAR), base_url=base_url, timeout=DEFAULT_TIMEOUT)
 
 
-def call_openai_compatible_endpoint(model: str = "deepseek-v4-flash"):
-    client = _openai_client(ENDPOINTS.openai_url_go)
+def _call_openai_endpoint(base_url: str, model: str):
+    client = _openai_client(base_url)
     completion = client.chat.completions.create(
         model=model,
         messages=[_health_check_message()],
@@ -55,8 +55,16 @@ def _call_anthropic_endpoint(base_url: str, model: str):
     print(message.content)
 
 
-def call_anthropic_compatible_endpoint(model: str = "minimax-m2.7"):
+def call_openai_compatible_endpoint_go_mode(model: str = "deepseek-v4-flash"):
+    _call_openai_endpoint(ENDPOINTS.openai_url_go, model)
+
+
+def call_anthropic_compatible_endpoint_go_mode(model: str = "minimax-m2.7"):
     _call_anthropic_endpoint(ENDPOINTS.anthropic_url_go, model)
+
+
+def call_openai_compatible_endpoint_zen_mode(model: str = "big-pickle"):
+    _call_openai_endpoint(ENDPOINTS.openai_url_zen, model)
 
 
 def call_anthropic_compatible_endpoint_zen_mode(model: str = "qwen3.6-plus"):
@@ -65,6 +73,7 @@ def call_anthropic_compatible_endpoint_zen_mode(model: str = "qwen3.6-plus"):
 
 if __name__ == "__main__":
     load_dotenv()
-    # call_openai_compatible_endpoint()
-    # call_anthropic_compatible_endpoint()
-    call_anthropic_compatible_endpoint_zen_mode()
+    # call_openai_compatible_endpoint_go_mode()
+    # call_anthropic_compatible_endpoint_go_mode()
+    call_anthropic_compatible_endpoint_zen_mode(model="claude-opus-5")
+    # call_openai_compatible_endpoint_zen_mode()
