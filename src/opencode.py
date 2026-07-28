@@ -5,6 +5,12 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 from openai import OpenAI
 
+HEALTH_CHECK_PROMPT = "Hello, this is a health check. Are you working?"
+DEFAULT_TIMEOUT = 30
+DEFAULT_MAX_TOKENS = 1024
+API_KEY_ENV_VAR = "OPENCODE_API_KEY_DEFAULT"
+
+
 @dataclass(frozen=True)
 class EndpointConfig:
     openai_url_go: str = "https://opencode.ai/zen/go/v1"
@@ -12,63 +18,50 @@ class EndpointConfig:
     anthropic_url_go: str = "https://opencode.ai/zen/go"
     anthropic_url_zen: str = "https://opencode.ai/zen"
 
+
 ENDPOINTS = EndpointConfig()
 
-def call_openai_compatible_endpoint():
-    client = OpenAI(
-        api_key=os.getenv("OPENCODE_API_KEY_DEFAULT"),
-        base_url=ENDPOINTS.openai_url_go
-    )
+
+def _health_check_message() -> dict[str, str]:
+    return {"role": "user", "content": HEALTH_CHECK_PROMPT}
+
+
+def _openai_client(base_url: str) -> OpenAI:
+    return OpenAI(api_key=os.getenv(API_KEY_ENV_VAR), base_url=base_url, timeout=DEFAULT_TIMEOUT)
+
+
+def _anthropic_client(base_url: str) -> Anthropic:
+    return Anthropic(api_key=os.getenv(API_KEY_ENV_VAR), base_url=base_url, timeout=DEFAULT_TIMEOUT)
+
+
+def call_openai_compatible_endpoint(model: str = "deepseek-v4-flash"):
+    client = _openai_client(ENDPOINTS.openai_url_go)
     completion = client.chat.completions.create(
-        model="deepseek-v4-flash",
-        messages=[
-            {
-                "role": "user",
-                "content": "Hello, this is a health check. Are you working?"
-            },
-        ],
-        timeout=30
+        model=model,
+        messages=[_health_check_message()],
     )
 
     print(completion.choices[0].message.content)
 
-def call_anthropic_compatible_endpoint():
-    client = Anthropic(
-        api_key=os.getenv("OPENCODE_API_KEY_DEFAULT"),
-        base_url=ENDPOINTS.anthropic_url_go
-    )
+
+def _call_anthropic_endpoint(base_url: str, model: str):
+    client = _anthropic_client(base_url)
     message = client.messages.create(
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": "Hello, this is a health check. Are you working?"
-            },
-        ],
-        model="minimax-m2.7",
-        timeout=30
+        max_tokens=DEFAULT_MAX_TOKENS,
+        messages=[_health_check_message()],
+        model=model,
     )
 
     print(message.content)
 
-def call_anthropic_compatible_endpoint_zen_mode():
-    client = Anthropic(
-        api_key=os.getenv("OPENCODE_API_KEY_DEFAULT"),
-        base_url=ENDPOINTS.anthropic_url_zen
-    )
-    message = client.messages.create(
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": "Hello, this is a health check. Are you working?"
-            },
-        ],
-        model="qwen3.6-plus",
-        timeout=30
-    )
 
-    print(message.content)
+def call_anthropic_compatible_endpoint(model: str = "minimax-m2.7"):
+    _call_anthropic_endpoint(ENDPOINTS.anthropic_url_go, model)
+
+
+def call_anthropic_compatible_endpoint_zen_mode(model: str = "qwen3.6-plus"):
+    _call_anthropic_endpoint(ENDPOINTS.anthropic_url_zen, model)
+
 
 if __name__ == "__main__":
     load_dotenv()
