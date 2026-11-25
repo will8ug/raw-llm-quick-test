@@ -13,6 +13,7 @@ wheels/
 # IDE
 .idea/
 .vscode/
+.qoder/
 *.swp
 *.swo
 
